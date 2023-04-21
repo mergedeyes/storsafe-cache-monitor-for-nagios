@@ -2,7 +2,7 @@
 
 # Nagios check script for FalconStor StorSafe CacheCapacity
 # File name: snmp_falconstor_cache.sh
-# Version: 1.0
+# Version: 1.0.2
 # Author: Jan Motulla - DE
 # Contact: github@mergedcloud.de
 
@@ -86,6 +86,9 @@ for object in "${objects_gb[@]}"; do
     # Format the output to only contain numbers and decimals
     output_gb=$(echo "$output" | grep -oP '\d+(\.\d+)?')
 
+    # Check if $output_gb is empty - if so, exit with exit code 1 (WARNING)
+    [ -z "$output_gb" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
+
     sleep 1
 
     counter=$((counter + 1))
@@ -106,12 +109,15 @@ done
 # Set variable "counter" to 0 for the second array
 counter=0
 
-# Run the snmpwalk command for each object in the array "objects_perc" to output the percent values
+# Run the snmpwalk command for each object in the array "objects_perc" to output the percentage values
 for object in "${objects_perc[@]}"; do
     # Get the snmp data and cut it to contain everything after the last colon
     output=$(snmpwalk -v2c -c $falcon_com -m $falcon_mib $falcon_ip $object | awk -F ':' '{print $NF}')
     # Format the output to only contain numbers and decimals
     output_perc=$(echo "$output" | grep -oP '\d+(\.\d+)?')
+
+    # Check if $output_perc is empty - if so, exit with exit code 1 (WARNING)
+    [ -z "$output_perc" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
 
     sleep 1
 
@@ -123,7 +129,7 @@ for object in "${objects_perc[@]}"; do
       if [[ $output_perc > $critical_threshold ]]; then
         # Output data of used capacity to Nagios
         echo "SERVICE STATUS: CRITICAL - Used Cache-Capacity in percent: $output | used_cache_perc=$output_perc%"
-        # Exit script with exit code 2 = CRITICAL and 
+        # Exit script with exit code 2 = CRITICAL
         exit 2
       # Check if used Cache-Capacity is over warning threshold
       elif [[ $output_perc > $warning_threshold ]]; then
