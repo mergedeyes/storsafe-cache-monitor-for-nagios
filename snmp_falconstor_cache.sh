@@ -120,13 +120,13 @@ for object in "${objects_perc[@]}"; do
     # Save the data in variables
     if [[ $counter -eq 1 ]]; then
       # Check if used Cache-Capacity is over critical threshold
-      if [[ $output_perc -gt $critical_threshold ]]; then
+      if [[ $output_perc > $critical_threshold ]]; then
         # Output data of used capacity to Nagios
         echo "SERVICE STATUS: CRITICAL - Used Cache-Capacity in percent: $output | used_cache_perc=$output_perc%"
         # Exit script with exit code 2 = CRITICAL and 
         exit 2
       # Check if used Cache-Capacity is over warning threshold
-      elif [[ $output_perc -gt $warning_threshold ]]; then
+      elif [[ $output_perc > $warning_threshold ]]; then
         # Output data of used capacity to Nagios
         echo "SERVICE STATUS: WARNING - Used Cache-Capacity in percent: $output | used_cache_perc=$output_perc%"
         # Exit script with exit code 1 = WARNING
