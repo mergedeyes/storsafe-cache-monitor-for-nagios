@@ -72,7 +72,7 @@ done
 falcon_com="falcon"
 # Directory of the MIB file
 falcon_mib="/usr/share/snmp/mibs/FALCONSTOR-MIB.txt"
-# Arrays for MIB-Object to use in the following if-loops
+# Arrays for MIB-Object to use in the following for-loops
 objects_gb=("CacheCapacitytotal" "CacheCapacityUsed" "BackupCacheCapacityAvailable")
 objects_perc=("CacheCapacityPercentUsed" "CacheCapacityPercentFree")
 
@@ -92,7 +92,7 @@ for object in "${objects_gb[@]}"; do
 
     # Save the data in variables
     if [[ $counter -eq 1 ]]; then
-      output_tot_gb_info="SERVICE STATUS: OK - Total Cache-Capacity in GB: $output"
+      output_tot_gb_info="SERVICE STATUS: OK - Total Cache-Capacity: $output"
       output_tot_gb_perf="total_cache_gb=${output_gb}GB"
     elif [[ $counter -eq 2 ]]; then
       output_used_gb_info="SERVICE STATUS: OK - Used Cache-Capacity: $output"
