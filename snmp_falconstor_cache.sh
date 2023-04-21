@@ -71,7 +71,7 @@ done
 # Set variables
 # Community string of your FalconStor
 falcon_com="falcon"
-# Directory of the MIB file
+# Full path of the MIB file
 falcon_mib="/usr/share/snmp/mibs/FALCONSTOR-MIB.txt"
 # Arrays for MIB-Object to use in the following for-loops
 objects_gb=("CacheCapacitytotal" "CacheCapacityUsed" "BackupCacheCapacityAvailable")
