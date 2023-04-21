@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Nagios check script for FalconStor StorSafe CacheCapacity
+# Nagios check script for FalconStor StorSafe Cache Capacity
 # File name: snmp_falconstor_cache.sh
 # Version: 1.0.2
 # Author: Jan Motulla - DE
