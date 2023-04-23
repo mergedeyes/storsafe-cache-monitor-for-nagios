@@ -10,14 +10,14 @@
 # Usage:
 #                               Arguments:
 #                   -H [HOST IP-ADDRESS]
-#                   -w [WARNING THRESHOLD FOR PERCENTAGE]
-#                   -c [CRITICAL THRESHOLD FOR PERCENTAGE]
+#                   -w [WARNING THRESHOLD PERCENTAGE]
+#                   -c [CRITICAL THRESHOLD PERCENTAGE]
 #
 # 1. Upload the MIB file of your FalconStor StorSafe (you can find them on your FalconStor StorSafe server in $ISHOME/etc/snmp/mibs) to your Nagios machine and place it into /usr/share/snmp/mibs.
 # 2. Enable SNMP on your FalconStor StorSafe and set your community string. You can find directions on the internet.
 # 3. Upload this script to your Nagios machine and place it in your script folder e.g. /usr/local/nagios/libexec and make it executable with "chmod +x snmp_falconstor_cache.sh".
-# 4. Change the following variables "falcon_com" and "falcon_mib" so it matches your configuration.
-# 5. Test the script by simply executing it on your Nagios machine.
+# 4. Modify the variables "falcon_com" and "falcon_mib" to match your configuration.
+# 5. Test the script by executing it on your Nagios machine.
 # 6. Implement the script.
 #
 # Examples for commands.cfg and services.cfg:
@@ -45,7 +45,7 @@
 #                               #
 #################################
 
-# Parse arguments
+# Parse command-line arguments
 while getopts ":H:w:c:" opt; do
   case ${opt} in
     H )
@@ -77,10 +77,10 @@ falcon_mib="/usr/share/snmp/mibs/FALCONSTOR-MIB.txt"
 objects_gb=("CacheCapacitytotal" "CacheCapacityUsed" "BackupCacheCapacityAvailable")
 objects_perc=("CacheCapacityPercentUsed" "CacheCapacityPercentFree")
 
-# Set variable "counter" to 0 to loop through the first array
+# Initialize "counter" variable to 0 to loop through the first array
 counter=0
 
-# Run the snmpwalk command for each object in the array "objects_gb" to output the GB values
+# Loop through each object in the "objects_gb" array to get the GB values
 for object in "${objects_gb[@]}"; do
     # Get the snmp data and cut it to contain everything after the last colon
     output=$(snmpwalk -v2c -c $falcon_com -m $falcon_mib $falcon_ip $object | awk -F ':' '{print $NF}')
