@@ -159,7 +159,6 @@ for object in "${objects_gb[@]}"; do
         elif [[ $(echo "$output_perc_save > $warning_threshold" | bc -l) -eq 1 ]]; then
           output_used_gb_info="SERVICE STATUS: WARNING - Used Cache-Capacity: $output"
         else
-        echo "output_perc=$output_perc"
          output_used_gb_info="SERVICE STATUS: OK - Used Cache-Capacity: $output"
         fi
         
