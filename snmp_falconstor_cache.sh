@@ -73,12 +73,6 @@ while getopts ":H:W:C:c:" opt; do
   esac
 done
 
-# Debug
-echo "falcon_ip: $falcon_ip"
-echo "warning_threshold: $warning_threshold"
-echo "critical_threshold: $critical_threshold"
-echo "check_type: $check_type"
-
 # Set default thresholds if needed and check_type MIB objects
 if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALLCache" ]; then
   if [ -z "$warning_threshold" ] || [ -z "$critical_threshold" ]; then
@@ -181,7 +175,6 @@ if [ "$check_type" = "ALLCache" ] || [ "$check_type" = "AvailCache" ]; then
     array_index_1=3
   fi
   used_prc=$(bc <<< "100-${output_array_num[$array_index_1]}")
-  echo "Used percentage: $used_prc%"
   # Check if the values are above warning or critical thresholds for Available Cache-Capacity and make arrays ready for output
   if [ $(echo "$used_prc > $critical_threshold" | bc -l) -eq 1 ]; then
     output_array_num[$array_index_0]="SERVICE STATUS: CRITICAL - Available Cache-Capacity: ${output_array_num[$array_index_0]}GB"
@@ -194,5 +187,6 @@ if [ "$check_type" = "ALLCache" ] || [ "$check_type" = "AvailCache" ]; then
     output_array_num[$array_index_1]="SERVICE STATUS: OK - Available Cache-Capacity: ${output_array_num[$array_index_1]}%"
   fi
 fi
+
 echo ${output_array_str[@]}
 echo ${output_array_num[@]}
