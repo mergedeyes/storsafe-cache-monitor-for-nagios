@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -x  
 # Nagios check script for FalconStor StorSafe Cache Capacity
 # File name: snmp_falconstor_cache.sh
 # Version: 1.0.2
@@ -34,7 +34,7 @@
 #     hostgroup_name          FS_StorSafe
 #     servicegroups           40-ALG-10_cache_cap
 #     service_description     40-ALG-20 Cache-Capacity
-#     check_command           check_falconstor_cache!ALL!95!97
+#     check_command           check_falconstor_cache!ALLCache!95!97
 #     check_interval          60
 #     notification_interval   90
 # }
@@ -62,7 +62,7 @@ while getopts ":H:W:C:c:" opt; do
       ;;
     # Print usage message and exit if invalid option is provided
     \? )
-      echo -e "Usage: $(basename $0) [-H FalconStor StorSafe IP-Address] [-c CHECK TYPE ('UsedCache', 'AvailCache', 'TotalCache', 'ALL')]\n       -c UsedCache/ALL [-W WARNING threshold] [-C CRITICAL threshold]"
+      echo -e "Usage: $(basename $0) [-H FalconStor StorSafe IP-Address] [-c CHECK TYPE ('UsedCache', 'AvailCache', 'TotalCache', 'ALLCache', 'LocalCluster')]\n       -c UsedCache/ALLCache [-W WARNING threshold] [-C CRITICAL threshold]"
       exit 1
       ;;
     # Print error message and exit if option requires an argument but not provided
@@ -73,139 +73,126 @@ while getopts ":H:W:C:c:" opt; do
   esac
 done
 
-# Set default thresholds if check_type is AvailCache or TotalCache
-if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALL" ]; then
+# Debug
+echo "falcon_ip: $falcon_ip"
+echo "warning_threshold: $warning_threshold"
+echo "critical_threshold: $critical_threshold"
+echo "check_type: $check_type"
+
+# Set default thresholds if needed and check_type MIB objects
+if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALLCache" ]; then
   if [ -z "$warning_threshold" ] || [ -z "$critical_threshold" ]; then
-    echo "Usage: $(basename $0) -c UsedCache/ALL requires -W and -C options." >&2
+    echo "Usage: $(basename $0) -c UsedCache/ALLCache requires -W and -C options." >&2
     exit 1
   fi
-elif [ "$check_type" = "AvailCache" ] || [ "$check_type" = "TotalCache" ]; then
-  warning_threshold=100
-  critical_threshold=100
+    if [ "$check_type" = "UsedCache" ]; then
+      objects_num=(   "CacheCapacityUsed" 
+                      "CacheCapacityPercentUsed")
+    elif [ "$check_type" = "ALLCache" ]; then
+      objects_num=(   "CacheCapacityUsed" 
+                      "CacheCapacityPercentUsed"
+                      "BackupCacheCapacityAvailable" 
+                      "CacheCapacityPercentFree"
+                      "CacheCapacitytotal")
+    fi
+    check_format="num"
+elif [ "$check_type" = "AvailCache" ]; then
+  objects_num=(   "BackupCacheCapacityAvailable" 
+                  "CacheCapacityPercentFree")
+  check_format="num"
+elif [ "$check_type" = "TotalCache" ]; then
+  objects_num=(    "CacheCapacitytotal")
+  check_format="num"
+elif [ "$check_type" = "LocalCluster" ]; then
+  objects_str="falcSIRClusterName"
+  objects_num=(   "falcSIRClusterDataDiskTotal" 
+                  "falcSIRClusterDataDiskAvailable" 
+                  "falcSIRClusterDataDiskAvailablePercentage" 
+                  "falcSIRClusterIndexDiskTotal" 
+                  "falcSIRClusterIndexDiskAvailable"
+                  "falcSIRClusterIndexDiskAvailablePercentage"
+                  "falcSIRClusterRepositoryObjectUsed"
+                  "falcSIRClusterRepositoryObjectAvailablePercentage"
+                  "falcSIRClusterFolderDiskTotal"
+                  "falcSIRClusterFolderDiskAvailablePercentage")
+  check_format="str"
 fi
 
 # Set variables for SNMP community string, MIB file path and MIB-Object arrays
 falcon_com="falcon"
 falcon_mib="/usr/share/snmp/mibs/FALCONSTOR-MIB.txt"
-objects_gb=("CacheCapacitytotal" "CacheCapacityUsed" "BackupCacheCapacityAvailable")
-objects_perc=("CacheCapacityPercentUsed" "CacheCapacityPercentFree")
 
-# Set variable "counter" to 0 for the second array
+# Initialize "counter" variable to loop through the arrays
 counter=0
 
-# Loop through each object in the "objects_perc" array to get the percentage values
-for object in "${objects_perc[@]}"; do
-    # Get the snmp data and cut it to contain everything after the last colon
-    output=$(snmpwalk -v2c -c $falcon_com -m $falcon_mib $falcon_ip $object | awk -F ':' '{print $NF}')
-    # Format the output to only contain numbers and decimals
-    output_perc=$(echo "$output" | grep -oP '\d+(\.\d+)?')
-    # Check if $output_perc is empty - if so, exit with exit code 1 (WARNING)
-    [ -z "$output_perc" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
-    sleep 1
+# Loop through each object in the "objects_str" array, if check_format is str and get snmp data, cut it to contain everything after the last colon without the first space
+if [ "$check_format" = "str" ]; then
+  # Initialize results array
+  output_array_str=()
+  for object in "${objects_str[@]}"; do
+    output=$(snmpwalk -v2c -c $falcon_com -m $falcon_mib $falcon_ip $object | awk -F':' '{sub(/^ /, "", $NF); print $NF}')
+    # Check if $output is empty - if so, exit with exit code 1 (WARNING)
+    [ -z "$output" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
+    # Save the results in the array
+    output_array_str[$counter]=$output
     counter=$((counter + 1))
-    # Save the data in variables
-    if [[ $counter -eq 1 ]]; then
-
-        # Check if the values are above warning or critical thresholds for Used Cache-Capacity
-        if [[ $(echo "$output_perc > $critical_threshold" | bc -l) -eq 1 ]]; then
-            output_used_perc_info="SERVICE STATUS: CRITICAL - Used Cache-Capacity: $output"
-        elif [[ $(echo "$output_perc > $warning_threshold" | bc -l) -eq 1 ]]; then
-            output_used_perc_info="SERVICE STATUS: WARNING - Used Cache-Capacity: $output"
-        else
-            output_used_perc_info="SERVICE STATUS: OK - Used Cache-Capacity: $output"
-        fi
-
-        output_used_perc_perf="used_cache_perc=$output_perc%"
-        # Save the output of $output_perc before it gets overwritten
-        output_perc_save=$output_perc
-
-    elif [[ $counter -eq 2 ]]; then
-
-        # Check if the values are above warning or critical thresholds for Available Cache-Capacity
-        if [[ $(echo "$output_perc_save > $critical_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_perc_info="SERVICE STATUS: CRITICAL - Available-Capacity: $output"
-        elif [[ $(echo "$output_perc_save > $warning_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_perc_info="SERVICE STATUS: WARNING - Available-Capacity: $output"
-        else
-            output_avai_perc_info="SERVICE STATUS: OK - Available-Cache-Capacity: $output"
-        fi
-        
-        output_avai_perc_perf="free_cache_perc=$output_perc%"
-    fi
-done
-
-# Initialize "counter" variable to 0 to loop through the first array
-counter=0
-
-# Loop through each object in the "objects_gb" array to get the GB values
-for object in "${objects_gb[@]}"; do
-    # Get the snmp data and cut it to contain everything after the last colon
-    output=$(snmpwalk -v2c -c $falcon_com -m $falcon_mib $falcon_ip $object | awk -F ':' '{print $NF}')
-    # Format the output to only contain numbers and decimals
-    output_gb=$(echo "$output" | grep -oP '\d+(\.\d+)?')
-    # Check if $output_gb is empty - if so, exit with exit code 1 (WARNING)
-    [ -z "$output_gb" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
-    sleep 1
-    counter=$((counter + 1))
-    # Save the data in variables
-    if [[ $counter -eq 1 ]]; then
-      output_tot_gb_info="SERVICE STATUS: OK - Total Cache-Capacity: $output"
-      output_tot_gb_perf="total_cache_gb=${output_gb}GB"
-    elif [[ $counter -eq 2 ]]; then
-
-        # Check if the values are above warning or critical thresholds for Used Cache-Capacity in GB
-        if [[ $(echo "$output_perc_save > $critical_threshold" | bc -l) -eq 1 ]]; then
-          output_used_gb_info="SERVICE STATUS: CRITICAL - Used Cache-Capacity: $output"
-        elif [[ $(echo "$output_perc_save > $warning_threshold" | bc -l) -eq 1 ]]; then
-          output_used_gb_info="SERVICE STATUS: WARNING - Used Cache-Capacity: $output"
-        else
-         output_used_gb_info="SERVICE STATUS: OK - Used Cache-Capacity: $output"
-        fi
-        
-      output_used_gb_perf="used_cache_gb=${output_gb}GB"
-    elif [[ $counter -eq 3 ]]; then
-
-        # Check if the values are above warning or critical thresholds for Available Cache-Capacity in GB
-        if [[ $(echo "$output_perc_save > $critical_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_gb_info="SERVICE STATUS: CRITICAL - Available-Cache-Capacity: $output"
-        elif [[ $(echo "$output_perc_save > $warning_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_gb_info="SERVICE STATUS: WARNING - Available-Cache-Capacity: $output"
-        else
-            output_avai_gb_info="SERVICE STATUS: OK - Available-Cache-Capacity: $output"
-        fi
-
-      output_avai_gb_perf="free_cache_gb=${output_gb}GB"
-    fi
-done
-
-# Output data to Nagios based on check type
-if [[ $check_type == "UsedCache" ]]; then
-    used_cache_perc=$(echo "$output_used_perc_info" | grep -oP '\d+(\.\d+)?')
-
-    if (( $(echo "$used_cache_perc > $critical_threshold" | bc -l) )); then
-        echo "$output_used_perc_info\n$output_used_gb_info | used_cache_perc=$used_cache_perc% $output_used_gb_perf"
-        exit 2
-    elif (( $(echo "$used_cache_perc > $warning_threshold" | bc -l) )); then
-        echo "$output_used_perc_info\n$output_used_gb_info | used_cache_perc=$used_cache_perc% $output_used_gb_perf"
-        exit 1
-    else
-        echo "$output_used_perc_info\nSERVICE STATUS: OK - Used Cache-Capacity: $output_used_gb_info | $output_used_perc_perf $output_used_gb_perf"
-    fi
-
-elif [[ $check_type == "AvailCache" ]]; then
-    echo "$output_avai_perc_info\n$output_avai_gb_info | $output_avai_perc_perf $output_avai_gb_perf"
-elif [[ $check_type == "TotalCache" ]]; then
-    echo "$output_tot_gb_info | $output_tot_gb_perf"
-elif [[ $check_type == "ALL" ]]; then
-    echo "$output_used_perc_info\n$output_used_gb_info\n$output_avai_perc_info\n$output_avai_gb_info\n$output_tot_gb_info | $output_used_perc_perf $output_used_gb_perf $output_avai_perc_perf $output_avai_gb_perf $output_tot_gb_perf"
-
-    if [[ $output_perc_save > $critical_threshold ]]; then
-      exit 2
-    elif [[ $output_perc_save > $warning_threshold ]]; then
-      exit 1
-    fi
-
+  done
+  check_format=num
 fi
 
-# Exit script with exit code 0 = OK
-exit 0
+# Loop through each object in the "objects_num" array, if check_format is num and get snmp data, cut it to contain everything after the last colon without the first space and to only decimals
+if [ "$check_format" = "num" ]; then
+  # Initialize results array
+  output_array_num=()
+  for object in "${objects_num[@]}"; do
+    output=$(snmpwalk -v2c -c $falcon_com -m $falcon_mib $falcon_ip $object | awk -F':' '{sub(/^ /, "", $NF); print $NF}')
+    output_num=$(echo "$output" | grep -oP '\d+(\.\d+)?')
+    # Check if $output_num is empty - if so, exit with exit code 1 (WARNING)
+    [ -z "$output_num" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
+    # Save the results in the array
+    output_array_num[$counter]=$output_num
+    counter=$((counter + 1))
+  done
+fi
+
+# Output data to nagios according to the check_type
+if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALLCache" ]; then
+  # Check if the values are above warning or critical thresholds for Used Cache-Capacity and make arrays ready for output
+  if [ $(echo "${output_array_num[1]} > $critical_threshold" | bc -l) -eq 1 ]; then
+    output_array_num[0]="SERVICE STATUS: CRITICAL - Used Cache-Capacity: ${output_array_num[0]}GB"
+    output_array_num[1]="SERVICE STATUS: CRITICAL - Used Cache-Capacity: ${output_array_num[1]}%"
+  elif [ $(echo "${output_array_num[1]} > $warning_threshold" | bc -l) -eq 1 ]; then
+    output_array_num[0]="SERVICE STATUS: WARNING - Used Cache-Capacity: ${output_array_num[0]}GB"
+    output_array_num[1]="SERVICE STATUS: WARNING - Used Cache-Capacity: ${output_array_num[1]}%"
+  else
+    output_array_num[0]="SERVICE STATUS: OK - Used Cache-Capacity: ${output_array_num[0]}GB"
+    output_array_num[1]="SERVICE STATUS: OK - Used Cache-Capacity: ${output_array_num[1]}%"
+  fi
+fi
+if [ "$check_type" = "ALLCache" ] || [ "$check_type" = "AvailCache" ]; then
+  if [ "$check_type" = "AvailCache" ]; then
+    # Change the array indice-variables to get the right data
+    array_index_0=0
+    array_index_1=1
+    critical_threshold="100-$critical_threshold"
+    warning_threshold="100-$warning_threshold"
+  elif [ "$check_type" = "ALLCache" ]; then
+    array_index_0=2
+    array_index_1=3
+  fi
+  used_prc=$(bc <<< "100-${output_array_num[$array_index_1]}")
+  echo "Used percentage: $used_prc%"
+  # Check if the values are above warning or critical thresholds for Available Cache-Capacity and make arrays ready for output
+  if [ $(echo "$used_prc > $critical_threshold" | bc -l) -eq 1 ]; then
+    output_array_num[$array_index_0]="SERVICE STATUS: CRITICAL - Available Cache-Capacity: ${output_array_num[$array_index_0]}GB"
+    output_array_num[$array_index_1]="SERVICE STATUS: CRITICAL - Available Cache-Capacity: ${output_array_num[$array_index_1]}%"
+  elif [[ $(echo "$used_prc > $warning_threshold" | bc -l) -eq 1 ]]; then
+    output_array_num[$array_index_0]="SERVICE STATUS: WARNING - Available Cache-Capacity: ${output_array_num[$array_index_0]}GB"
+    output_array_num[$array_index_1]="SERVICE STATUS: WARNING - Available Cache-Capacity: ${output_array_num[$array_index_1]}%"
+  else
+    output_array_num[$array_index_0]="SERVICE STATUS: OK - Available Cache-Capacity: ${output_array_num[$array_index_0]}GB"
+    output_array_num[$array_index_1]="SERVICE STATUS: OK - Available Cache-Capacity: ${output_array_num[$array_index_1]}%"
+  fi
+fi
+echo ${output_array_str[@]}
+echo ${output_array_num[@]}
