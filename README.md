@@ -23,7 +23,7 @@ This repository contains a Nagios check script for monitoring the cache capacity
 3. Make the script executable with `chmod +x snmp_falconstor_cache.sh`.
 4. Modify the `falcon_com` and `falcon_mib` variables in the script to match your configuration.
 5. Test the script by executing it on your Nagios server.
-6. Implement the script in your Nagios configuration by adding appropriate commands and service definitions (examples can be found in the script comments).
+6. Implement the script in your Nagios configuration by adding appropriate commands and service definitions (examples are provided in the script comments).
 
 ## Usage
 
