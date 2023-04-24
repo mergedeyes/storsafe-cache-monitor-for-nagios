@@ -62,7 +62,7 @@ while getopts ":H:W:C:c:" opt; do
       ;;
     # Print usage message and exit if invalid option is provided
     \? )
-      echo -e "Usage: $(basename $0) [-H FalconStor StorSafe IP-Address] [-c CHECK TYPE ('UsedCache', 'AvailCache', 'TotalCache', 'ALL')]\n       -c UsedCache [-W WARNING threshold] [-C CRITICAL threshold]"
+      echo -e "Usage: $(basename $0) [-H FalconStor StorSafe IP-Address] [-c CHECK TYPE ('UsedCache', 'AvailCache', 'TotalCache', 'ALL')]\n       -c UsedCache/ALL [-W WARNING threshold] [-C CRITICAL threshold]"
       exit 1
       ;;
     # Print error message and exit if option requires an argument but not provided
