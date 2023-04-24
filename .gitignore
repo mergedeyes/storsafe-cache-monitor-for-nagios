@@ -9,6 +9,7 @@
 *.user
 *.userosscache
 *.sln.docstates
+test_snmp_falconstor_cache.sh
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
