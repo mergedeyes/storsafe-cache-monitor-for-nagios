@@ -2,7 +2,7 @@
 set -x  
 # Nagios check script for FalconStor StorSafe Cache Capacity
 # File name: snmp_falconstor_cache.sh
-# Version: 1.0.2
+# Version: 2.0.0
 # Author: Jan Motulla - DE
 # GitHub: https://github.com/mergedeyes/storsafe-cache-monitor-for-nagios
 # Contact: github@mergedcloud.de
