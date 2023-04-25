@@ -8,7 +8,7 @@ This repository contains a Nagios check script for monitoring the cache capacity
 - Monitor available cache capacity (percentage and GB)
 - Monitor total cache capacity (GB)
 - Customizable warning and critical thresholds
-- Supports multiple check types: UsedCache, AvailCache, TotalCache, and ALL
+- Supports multiple check types: UsedCache, AvailCache, TotalCache, ALLCache and LocalCluster
 
 ## Prerequisites
 
@@ -27,7 +27,7 @@ This repository contains a Nagios check script for monitoring the cache capacity
 
 ## Usage
 
-./snmp_falconstor_cache.sh `-H` [FalconStor StorSafe IP-Address] `-c` [Check Type ('UsedCache', 'AvailCache', 'TotalCache', 'ALL')] `-W` [WARNING threshold] `-C` [CRITICAL threshold]
+./snmp_falconstor_cache.sh `-H` [FalconStor StorSafe IP-Address] `-c` [Check Type ('UsedCache', 'AvailCache', 'TotalCache', 'ALLCache', 'LocalCluster')] `-W` [WARNING threshold] `-C` [CRITICAL threshold]
 
 Replace `[FalconStor StorSafe IP-Address]` with the IP address of your FalconStor StorSafe system, choose the `[check type]` and set the `[WARNING threshold]` and `[CRITICAL threshold]` to the desired percentage values.
 
@@ -35,7 +35,8 @@ Replace `[FalconStor StorSafe IP-Address]` with the IP address of your FalconSto
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
-## Contact
+## Author
 
-Jan Motulla - DE
-github@mergedcloud.de
+- Jan Motulla - DE
+- [GitHub](https://github.com/mergedeyes/storsafe-cache-monitor-for-nagios)
+- Contact: github@mergedcloud.de
