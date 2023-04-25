@@ -2,7 +2,7 @@
 
 # Nagios check script for FalconStor StorSafe Cache Capacity
 # File name: snmp_falconstor_cache.sh
-# Version: 1.1.4
+# Version: 1.1.5
 # Author: Jan Motulla - DE
 # GitHub: https://github.com/mergedeyes/storsafe-cache-monitor-for-nagios
 # Contact: github@mergedcloud.de
@@ -101,7 +101,6 @@ for object in "${objects_perc[@]}"; do
     output_perc=$(echo "$output" | grep -oP '\d+(\.\d+)?')
     # Check if $output_perc is empty - if so, exit with exit code 1 (WARNING)
     [ -z "$output_perc" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
-    sleep 1
     counter=$((counter + 1))
     # Save the data in variables
     if [[ $counter -eq 1 ]]; then
@@ -115,7 +114,7 @@ for object in "${objects_perc[@]}"; do
             output_used_perc_info="SERVICE STATUS: OK - Used Cache-Capacity: $output"
         fi
 
-        output_used_perc_perf="used_cache_perc=$output_perc%"
+        output_used_perc_perf="used_cache_perc=$output_perc%;$warning_threshold;$critical_threshold"
         # Save the output of $output_perc before it gets overwritten
         output_perc_save=$output_perc
 
@@ -145,7 +144,6 @@ for object in "${objects_gb[@]}"; do
     output_gb=$(echo "$output" | grep -oP '\d+(\.\d+)?')
     # Check if $output_gb is empty - if so, exit with exit code 1 (WARNING)
     [ -z "$output_gb" ] && { echo "WARNING: At least one object returned empty."; exit 1; }
-    sleep 1
     counter=$((counter + 1))
     # Save the data in variables
     if [[ $counter -eq 1 ]]; then
@@ -167,11 +165,11 @@ for object in "${objects_gb[@]}"; do
 
         # Check if the values are above warning or critical thresholds for Available Cache-Capacity in GB
         if [[ $(echo "$output_perc_save > $critical_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_gb_info="SERVICE STATUS: CRITICAL - Available-Cache-Capacity: $output"
+            output_avai_gb_info="SERVICE STATUS: CRITICAL - Available Cache-Capacity: $output"
         elif [[ $(echo "$output_perc_save > $warning_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_gb_info="SERVICE STATUS: WARNING - Available-Cache-Capacity: $output"
+            output_avai_gb_info="SERVICE STATUS: WARNING - Available Cache-Capacity: $output"
         else
-            output_avai_gb_info="SERVICE STATUS: OK - Available-Cache-Capacity: $output"
+            output_avai_gb_info="SERVICE STATUS: OK - Available Cache-Capacity: $output"
         fi
 
       output_avai_gb_perf="free_cache_gb=${output_gb}GB"
@@ -183,10 +181,10 @@ if [[ $check_type == "UsedCache" ]]; then
     used_cache_perc=$(echo "$output_used_perc_info" | grep -oP '\d+(\.\d+)?')
 
     if (( $(echo "$used_cache_perc > $critical_threshold" | bc -l) )); then
-        echo "$output_used_perc_info\n$output_used_gb_info | used_cache_perc=$used_cache_perc% $output_used_gb_perf"
+        echo "$output_used_perc_info\n$output_used_gb_info | $output_used_perc_perf $output_used_gb_perf"
         exit 2
     elif (( $(echo "$used_cache_perc > $warning_threshold" | bc -l) )); then
-        echo "$output_used_perc_info\n$output_used_gb_info | used_cache_perc=$used_cache_perc% $output_used_gb_perf"
+        echo "$output_used_perc_info\n$output_used_gb_info | $output_used_perc_perf $output_used_gb_perf"
         exit 1
     else
         echo "$output_used_perc_info\nSERVICE STATUS: OK - Used Cache-Capacity: $output_used_gb_info | $output_used_perc_perf $output_used_gb_perf"
