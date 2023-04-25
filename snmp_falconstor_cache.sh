@@ -73,7 +73,7 @@ while getopts ":H:W:C:c:" opt; do
   esac
 done
 
-# Set default thresholds if needed and check_type MIB objects
+# Set check_type MIB objects and default thresholds if needed
 if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALLCache" ]; then
   if [ -z "$warning_threshold" ] || [ -z "$critical_threshold" ]; then
     echo "Usage: $(basename $0) -c UsedCache/ALLCache requires -W and -C options." >&2
@@ -151,7 +151,7 @@ fi
 
 # Output data to nagios according to the check_type
 if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALLCache" ]; then
-  # Check if the values are above warning or critical thresholds for Used Cache-Capacity and make arrays ready for output
+  # Check if the values are above warning or critical thresholds for Used Cache-Capacity and reuse arrays/make arrays ready for output
   if [ $(echo "${output_array_num[1]} > $critical_threshold" | bc -l) -eq 1 ]; then
     output_array_num[0]="SERVICE STATUS: CRITICAL - Used Cache-Capacity: ${output_array_num[0]}GB"
     output_array_num[1]="SERVICE STATUS: CRITICAL - Used Cache-Capacity: ${output_array_num[1]}%"
@@ -165,7 +165,7 @@ if [ "$check_type" = "UsedCache" ] || [ "$check_type" = "ALLCache" ]; then
 fi
 if [ "$check_type" = "ALLCache" ] || [ "$check_type" = "AvailCache" ]; then
   if [ "$check_type" = "AvailCache" ]; then
-    # Change the array indice-variables to get the right data
+    # Set the array indice-variables to get the right data for different check_type
     array_index_0=0
     array_index_1=1
     critical_threshold="100-$critical_threshold"
@@ -175,7 +175,7 @@ if [ "$check_type" = "ALLCache" ] || [ "$check_type" = "AvailCache" ]; then
     array_index_1=3
   fi
   used_prc=$(bc <<< "100-${output_array_num[$array_index_1]}")
-  # Check if the values are above warning or critical thresholds for Available Cache-Capacity and make arrays ready for output
+  # Check if the values are above warning or critical thresholds for Available Cache-Capacity and reuse arrays/make arrays ready for output
   if [ $(echo "$used_prc > $critical_threshold" | bc -l) -eq 1 ]; then
     output_array_num[$array_index_0]="SERVICE STATUS: CRITICAL - Available Cache-Capacity: ${output_array_num[$array_index_0]}GB"
     output_array_num[$array_index_1]="SERVICE STATUS: CRITICAL - Available Cache-Capacity: ${output_array_num[$array_index_1]}%"
