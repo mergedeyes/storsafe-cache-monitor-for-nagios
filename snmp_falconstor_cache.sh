@@ -122,11 +122,11 @@ for object in "${objects_perc[@]}"; do
 
         # Check if the values are above warning or critical thresholds for Available Cache-Capacity
         if [[ $(echo "$output_perc_save > $critical_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_perc_info="SERVICE STATUS: CRITICAL - Available-Capacity: $output"
+            output_avai_perc_info="SERVICE STATUS: CRITICAL - Available Cache-Capacity: $output"
         elif [[ $(echo "$output_perc_save > $warning_threshold" | bc -l) -eq 1 ]]; then
-            output_avai_perc_info="SERVICE STATUS: WARNING - Available-Capacity: $output"
+            output_avai_perc_info="SERVICE STATUS: WARNING - Available Cache-Capacity: $output"
         else
-            output_avai_perc_info="SERVICE STATUS: OK - Available-Cache-Capacity: $output"
+            output_avai_perc_info="SERVICE STATUS: OK - Available Cache-Capacity: $output"
         fi
         
         output_avai_perc_perf="free_cache_perc=$output_perc%"
