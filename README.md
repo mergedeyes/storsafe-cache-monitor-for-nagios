@@ -7,6 +7,7 @@ This repository contains a Nagios check script for monitoring the cache capacity
 - Monitor used cache capacity (percentage and GB)
 - Monitor available cache capacity (percentage and GB)
 - Monitor total cache capacity (GB)
+- Get information about your local Cluster
 - Customizable warning and critical thresholds
 - Supports multiple check types: UsedCache, AvailCache, TotalCache, ALLCache and LocalCluster
 
@@ -29,7 +30,7 @@ This repository contains a Nagios check script for monitoring the cache capacity
 
 ./snmp_falconstor_cache.sh `-H` [FalconStor StorSafe IP-Address] `-c` [Check Type ('UsedCache', 'AvailCache', 'TotalCache', 'ALLCache', 'LocalCluster')] `-W` [WARNING threshold] `-C` [CRITICAL threshold]
 
-Replace `[FalconStor StorSafe IP-Address]` with the IP address of your FalconStor StorSafe system, choose the `[check type]` and set the `[WARNING threshold]` and `[CRITICAL threshold]` to the desired percentage values.
+Replace `[FalconStor StorSafe IP-Address]` with the IP address of your FalconStor StorSafe system, choose the `[Check Type]` and set the `[WARNING threshold]` and `[CRITICAL threshold]` to the desired percentage values.
 
 ## License
 
