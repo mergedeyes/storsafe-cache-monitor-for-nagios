@@ -39,5 +39,5 @@ This project is licensed under the [GNU General Public License v3.0](LICENSE).
 ## Author
 
 - Jan Motulla - DE
-- [GitHub](https://github.com/mergedeyes/storsafe-cache-monitor-for-nagios)
+- [GitHub](https://github.com/mergedeyes/)
 - Contact: github@mergedcloud.de
